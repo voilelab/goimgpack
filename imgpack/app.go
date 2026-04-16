@@ -17,12 +17,12 @@ import (
 
 	dialogx "fyne.io/x/fyne/dialog"
 
-	"github.com/VoileLab/goimgpack/imgpack/assets"
-	"github.com/VoileLab/goimgpack/imgpack/imgstable"
-	"github.com/VoileLab/goimgpack/internal/imgutil"
+	"github.com/voilelab/goimgpack/imgpack/assets"
+	"github.com/voilelab/goimgpack/imgpack/imgstable"
+	"github.com/voilelab/goimgpack/internal/imgutil"
 )
 
-const appURL = "https://github.com/VoileLab/goimgpack"
+const appURL = "https://github.com/voilelab/goimgpack"
 
 var appSize = fyne.NewSize(1000, 800)
 

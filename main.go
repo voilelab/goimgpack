@@ -5,7 +5,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/VoileLab/goimgpack/imgpack"
+	"github.com/voilelab/goimgpack/imgpack"
 )
 
 func main() {

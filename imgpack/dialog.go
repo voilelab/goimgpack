@@ -6,7 +6,7 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/storage"
-	"github.com/VoileLab/goimgpack/internal/imgutil"
+	"github.com/voilelab/goimgpack/internal/imgutil"
 )
 
 func openImgsFile(cb func(fyne.URIReadCloser), w fyne.Window) {

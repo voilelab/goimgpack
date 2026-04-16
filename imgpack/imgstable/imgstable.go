@@ -4,8 +4,8 @@ import (
 	"image"
 	"slices"
 
-	"github.com/VoileLab/goimgpack/internal/imgutil"
 	"github.com/disintegration/imaging"
+	"github.com/voilelab/goimgpack/internal/imgutil"
 )
 
 type ImgsTable struct {

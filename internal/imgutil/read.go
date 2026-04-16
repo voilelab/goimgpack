@@ -11,9 +11,9 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/VoileLab/goimgpack/internal/util"
 	"github.com/pdfcpu/pdfcpu/pkg/api"
 	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu/model"
+	"github.com/voilelab/goimgpack/internal/util"
 )
 
 // ReadImgsInFile reads images from a file

@@ -1,7 +1,7 @@
 # goimgpack
 
-![License](https://img.shields.io/github/license/VoileLab/goimgpack)
-![Go Version](https://img.shields.io/github/go-mod/go-version/VoileLab/goimgpack)
+![License](https://img.shields.io/github/license/voilelab/goimgpack)
+![Go Version](https://img.shields.io/github/go-mod/go-version/voilelab/goimgpack)
 ![Comic Book Archive](https://img.shields.io/badge/CBZ-Support-blue)
 ![PDF](https://img.shields.io/badge/PDF-Support-blue)
 

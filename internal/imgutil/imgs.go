@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/VoileLab/goimgpack/internal/util"
+	"github.com/voilelab/goimgpack/internal/util"
 )
 
 var SupportedArchiveExts = []string{".zip", ".cbz"}

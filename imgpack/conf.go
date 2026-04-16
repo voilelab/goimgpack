@@ -5,7 +5,7 @@ import (
 	"os"
 	"path"
 
-	"github.com/VoileLab/goimgpack/internal/util"
+	"github.com/voilelab/goimgpack/internal/util"
 )
 
 type conf struct {

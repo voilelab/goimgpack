@@ -13,8 +13,8 @@ import (
 	"image"
 	"io"
 
-	"github.com/VoileLab/goimgpack/internal/util"
 	"github.com/disintegration/imaging"
+	"github.com/voilelab/goimgpack/internal/util"
 )
 
 var SupportedImageExts = []string{".png", ".jpg", ".jpeg", ".webp", ".bmp", ".tiff", ".gif"}

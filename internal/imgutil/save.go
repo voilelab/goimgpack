@@ -6,8 +6,8 @@ import (
 	"image/jpeg"
 	"io"
 
-	"github.com/VoileLab/goimgpack/internal/util"
 	"github.com/pdfcpu/pdfcpu/pkg/api"
+	"github.com/voilelab/goimgpack/internal/util"
 )
 
 // SaveImg saves an image to a file
