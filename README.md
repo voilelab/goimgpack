@@ -38,6 +38,18 @@ To package the app for macOS, use the following command:
 fyne package -os darwin
 ```
 
+## Releasing
+
+`FyneApp.toml`'s `Version` is the single source of truth for the released version.
+
+1. Run the **Prepare release** workflow on `main` and enter the new version (e.g. `0.6.0`).
+   It opens a PR that bumps `FyneApp.toml`.
+2. Merge that PR. **Release** picks up the version change on `main`, tags `v0.6.0`,
+   builds Windows / Linux / macOS packages and publishes the GitHub Release.
+
+A version with a suffix (e.g. `0.6.0-rc1`) is published as a pre-release. Pushes to
+`main` that leave the version untouched release nothing, so re-runs are safe.
+
 ## License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.

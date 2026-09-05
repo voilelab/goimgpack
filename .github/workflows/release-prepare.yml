@@ -1,0 +1,69 @@
+name: Prepare release
+
+# Release entry point: enter a version -> open a PR that only bumps FyneApp.toml.
+# Once merged, release.yml sees the version change and publishes the release.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version without the v prefix, e.g. 0.6.0'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+
+    steps:
+    # PRs opened with GITHUB_TOKEN do not trigger CI, so prefer RELEASE_PAT
+    - uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.RELEASE_PAT || secrets.GITHUB_TOKEN }}
+
+    - name: Validate version
+      env:
+        VERSION: ${{ inputs.version }}
+      run: |
+        if [[ "$GITHUB_REF_NAME" != "main" ]]; then
+          echo "::error::Run this workflow on main; releases are cut from main only"
+          exit 1
+        fi
+        if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+          echo "::error::Invalid version '$VERSION' (expected X.Y.Z or X.Y.Z-suffix, no v prefix)"
+          exit 1
+        fi
+        if git ls-remote --exit-code --tags origin "refs/tags/v$VERSION" >/dev/null 2>&1; then
+          echo "::error::Tag v$VERSION already exists"
+          exit 1
+        fi
+
+    - name: Bump version
+      env:
+        VERSION: ${{ inputs.version }}
+      run: |
+        sed -i -E 's/^([[:space:]]*Version[[:space:]]*=[[:space:]]*").*(")/\1'"$VERSION"'\2/' FyneApp.toml
+        if git diff --quiet FyneApp.toml; then
+          echo "::error::FyneApp.toml is already at $VERSION"
+          exit 1
+        fi
+        git diff FyneApp.toml
+
+    - name: Open pull request
+      env:
+        VERSION: ${{ inputs.version }}
+        GH_TOKEN: ${{ secrets.RELEASE_PAT || secrets.GITHUB_TOKEN }}
+      run: |
+        branch="release/v$VERSION"
+        git config user.name 'github-actions[bot]'
+        git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+        git switch -c "$branch"
+        git commit -am "Release v$VERSION"
+        git push -u origin "$branch"
+        body=$(printf '%s\n\n%s\n' \
+          "Bump \`FyneApp.toml\` to $VERSION." \
+          "Once merged, \`release.yml\` tags \`v$VERSION\` and publishes the GitHub Release.")
+        gh pr create --base main --head "$branch" --title "Release v$VERSION" --body "$body"
