@@ -1,48 +1,60 @@
 name: Release
 
+# FyneApp.toml 的 Version 就是「已發布版本」的唯一真相：
+# main 上的版號變成一個還沒有 tag 的值時，就建 tag 並發版。
+# 發版入口是 release-prepare.yml，它會開一個只改版號的 PR。
 on:
-  # 從 Actions UI 選 branch、填 tag 即可發版，不用 local push tag
-  workflow_dispatch:
-    inputs:
-      tag:
-        description: 'Release tag, e.g. v0.5.0 (created on the selected branch)'
-        required: true
-        type: string
-      prerelease:
-        description: 'Mark as pre-release'
-        type: boolean
-        default: false
-  # 直接 push tag 也照樣發版
   push:
-    tags:
-      - 'v*'
+    branches: [ main ]
 
 permissions:
   contents: write
 
+concurrency:
+  group: release
+  cancel-in-progress: false
+
 jobs:
-  prepare:
+  check:
     runs-on: ubuntu-latest
     outputs:
-      tag: ${{ steps.resolve.outputs.tag }}
+      release: ${{ steps.check.outputs.release }}
+      tag: ${{ steps.check.outputs.tag }}
+      prerelease: ${{ steps.check.outputs.prerelease }}
 
     steps:
-    # 先擋掉格式錯的 tag，免得跑完三個平台才失敗
-    - id: resolve
-      env:
-        INPUT_TAG: ${{ inputs.tag }}
-        REF_NAME: ${{ github.ref_name }}
+    - uses: actions/checkout@v4
+
+    - id: check
       run: |
-        tag="${INPUT_TAG:-$REF_NAME}"
-        if [[ ! "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
-          echo "::error::Invalid tag '$tag' (expected vX.Y.Z or vX.Y.Z-suffix)"
+        version="$(sed -nE 's/^[[:space:]]*Version[[:space:]]*=[[:space:]]*"([^"]+)".*/\1/p' FyneApp.toml | head -n1)"
+        if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+          echo "::error::Invalid Version '$version' in FyneApp.toml (expected X.Y.Z or X.Y.Z-suffix)"
           exit 1
         fi
+        tag="v$version"
         echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+        # 帶 suffix 的版號視為 pre-release
+        if [[ "$version" == *-* ]]; then
+          echo "prerelease=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "prerelease=false" >> "$GITHUB_OUTPUT"
+        fi
+
+        # tag 已存在代表這版發過了，跳過即可，重跑也安全
+        if git ls-remote --exit-code --tags origin "refs/tags/$tag" >/dev/null 2>&1; then
+          echo "release=false" >> "$GITHUB_OUTPUT"
+          echo "::notice::$tag already released, nothing to do"
+        else
+          echo "release=true" >> "$GITHUB_OUTPUT"
+          echo "::notice::Releasing $tag"
+        fi
 
   # windows / linux: cross-compile in docker via fyne-cross
   build-cross:
-    needs: prepare
+    needs: check
+    if: needs.check.outputs.release == 'true'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -75,7 +87,8 @@ jobs:
 
   # darwin: build natively, fyne-cross has no free darwin image
   build-darwin:
-    needs: prepare
+    needs: check
+    if: needs.check.outputs.release == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -112,7 +125,8 @@ jobs:
         if-no-files-found: error
 
   release:
-    needs: [prepare, build-cross, build-darwin]
+    needs: [check, build-cross, build-darwin]
+    if: needs.check.outputs.release == 'true'
     runs-on: ubuntu-latest
 
     steps:
@@ -124,13 +138,13 @@ jobs:
 
     - run: ls -l release
 
-    # tag 不存在時由 action 在 target_commitish 上建立
+    # tag 由 action 在這個 commit 上建立
     - name: Publish GitHub Release
       uses: softprops/action-gh-release@v2
       with:
-        tag_name: ${{ needs.prepare.outputs.tag }}
+        tag_name: ${{ needs.check.outputs.tag }}
         target_commitish: ${{ github.sha }}
         files: release/*
         generate_release_notes: true
         draft: false
-        prerelease: ${{ inputs.prerelease || contains(needs.prepare.outputs.tag, '-') }}
+        prerelease: ${{ needs.check.outputs.prerelease == 'true' }}
