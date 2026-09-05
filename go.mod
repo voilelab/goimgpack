@@ -1,6 +1,7 @@
 module github.com/voilelab/goimgpack
 
-go 1.26.2
+// Keep in sync with the Go version in the fyne-cross images (GOTOOLCHAIN=local there).
+go 1.25.0
 
 require (
 	fyne.io/fyne/v2 v2.7.3
