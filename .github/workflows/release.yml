@@ -48,9 +48,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - runner: macos-13      # amd64
+          # macos-15-intel is the last x86_64 macOS image, retiring Aug 2027
+          - runner: macos-15-intel
             arch: amd64
-          - runner: macos-latest  # arm64
+          - runner: macos-latest
             arch: arm64
     runs-on: ${{ matrix.runner }}
 
