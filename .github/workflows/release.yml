@@ -1,8 +1,8 @@
 name: Release
 
-# FyneApp.toml 的 Version 就是「已發布版本」的唯一真相：
-# main 上的版號變成一個還沒有 tag 的值時，就建 tag 並發版。
-# 發版入口是 release-prepare.yml，它會開一個只改版號的 PR。
+# FyneApp.toml's Version is the single source of truth for what is released:
+# when main carries a version that has no tag yet, tag it and publish.
+# Entry point is release-prepare.yml, which opens the version bump PR.
 on:
   push:
     branches: [ main ]
@@ -35,14 +35,14 @@ jobs:
         tag="v$version"
         echo "tag=$tag" >> "$GITHUB_OUTPUT"
 
-        # 帶 suffix 的版號視為 pre-release
+        # a version with a suffix is a pre-release
         if [[ "$version" == *-* ]]; then
           echo "prerelease=true" >> "$GITHUB_OUTPUT"
         else
           echo "prerelease=false" >> "$GITHUB_OUTPUT"
         fi
 
-        # tag 已存在代表這版發過了，跳過即可，重跑也安全
+        # an existing tag means this version already shipped, so re-runs are safe
         if git ls-remote --exit-code --tags origin "refs/tags/$tag" >/dev/null 2>&1; then
           echo "release=false" >> "$GITHUB_OUTPUT"
           echo "::notice::$tag already released, nothing to do"
@@ -138,7 +138,7 @@ jobs:
 
     - run: ls -l release
 
-    # tag 由 action 在這個 commit 上建立
+    # the action creates the tag on this commit
     - name: Publish GitHub Release
       uses: softprops/action-gh-release@v2
       with:

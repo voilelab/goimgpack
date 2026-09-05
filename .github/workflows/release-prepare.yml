@@ -1,7 +1,7 @@
 name: Prepare release
 
-# 發版入口：填版號 -> 開一個只改 FyneApp.toml 的 PR，
-# merge 後由 release.yml 偵測版號變更並發版。
+# Release entry point: enter a version -> open a PR that only bumps FyneApp.toml.
+# Once merged, release.yml sees the version change and publishes the release.
 on:
   workflow_dispatch:
     inputs:
@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    # GITHUB_TOKEN 開的 PR 不會觸發 CI，有 RELEASE_PAT 就優先用
+    # PRs opened with GITHUB_TOKEN do not trigger CI, so prefer RELEASE_PAT
     - uses: actions/checkout@v4
       with:
         token: ${{ secrets.RELEASE_PAT || secrets.GITHUB_TOKEN }}
@@ -65,5 +65,5 @@ jobs:
         git push -u origin "$branch"
         body=$(printf '%s\n\n%s\n' \
           "Bump \`FyneApp.toml\` to $VERSION." \
-          "Merge 後 \`release.yml\` 會偵測到版號變更，建立 tag \`v$VERSION\` 並發布 GitHub Release。")
+          "Once merged, \`release.yml\` tags \`v$VERSION\` and publishes the GitHub Release.")
         gh pr create --base main --head "$branch" --title "Release v$VERSION" --body "$body"
