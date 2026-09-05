@@ -1,0 +1,102 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  # windows / linux: cross-compile in docker via fyne-cross
+  build-cross:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [windows, linux]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: actions/setup-go@v5
+      with:
+        go-version: '1.26.2'
+
+    - name: Build and package
+      run: |
+        go install github.com/fyne-io/fyne-cross@latest
+        fyne-cross ${{ matrix.target }}
+
+    - name: Collect artifacts
+      run: |
+        mkdir -p release
+        find fyne-cross/dist -type f -exec cp {} release/ \;
+        ls -l release
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: release-${{ matrix.target }}
+        path: release/*
+        if-no-files-found: error
+
+  # darwin: build natively, fyne-cross has no free darwin image
+  build-darwin:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-13      # amd64
+            arch: amd64
+          - runner: macos-latest  # arm64
+            arch: arm64
+    runs-on: ${{ matrix.runner }}
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: actions/setup-go@v5
+      with:
+        go-version: '1.26.2'
+
+    - name: Build and package
+      run: |
+        go install fyne.io/tools/cmd/fyne@latest
+        fyne package --os darwin
+
+    - name: Collect artifacts
+      run: |
+        mkdir -p release
+        ditto -c -k --keepParent "Image Packer.app" "release/goimgpack-darwin-${{ matrix.arch }}.zip"
+        ls -l release
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: release-darwin-${{ matrix.arch }}
+        path: release/*
+        if-no-files-found: error
+
+  release:
+    needs: [build-cross, build-darwin]
+    runs-on: ubuntu-latest
+    # workflow_dispatch only exercises the build; publishing needs a tag
+    if: startsWith(github.ref, 'refs/tags/')
+
+    steps:
+    - uses: actions/download-artifact@v4
+      with:
+        pattern: release-*
+        merge-multiple: true
+        path: release
+
+    - run: ls -l release
+
+    - name: Publish GitHub Release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: release/*
+        generate_release_notes: true
+        draft: false
+        prerelease: ${{ contains(github.ref_name, '-') }}
